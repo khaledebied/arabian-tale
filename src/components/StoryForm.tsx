@@ -12,7 +12,7 @@ interface StoryFormProps {
 
 export const StoryForm = ({ onGenerate, isGenerating }: StoryFormProps) => {
   const [title, setTitle] = useState("");
-  const [duration, setDuration] = useState(5);
+  const [duration, setDuration] = useState(60);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,8 +20,8 @@ export const StoryForm = ({ onGenerate, isGenerating }: StoryFormProps) => {
       toast.error("Please enter a story title");
       return;
     }
-    if (duration < 1 || duration > 30) {
-      toast.error("Duration must be between 1 and 30 minutes");
+    if (duration < 10 || duration > 120) {
+      toast.error("Duration must be between 10 and 120 seconds");
       return;
     }
     onGenerate(title, duration);
@@ -62,22 +62,22 @@ export const StoryForm = ({ onGenerate, isGenerating }: StoryFormProps) => {
           className="text-sm font-medium text-foreground flex items-center gap-2"
         >
           <Clock className="w-4 h-4 text-primary" />
-          Video Duration (minutes)
+          Video Duration (seconds)
         </Label>
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
           <Input
             id="duration"
             type="number"
             inputMode="numeric"
-            min={1}
-            max={30}
+            min={10}
+            max={120}
             value={duration}
             onChange={(e) => setDuration(Number(e.target.value))}
             className="w-full sm:w-24 text-center text-lg"
             disabled={isGenerating}
           />
           <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-            {[3, 5, 10, 15].map((d) => (
+            {[30, 60, 90, 120].map((d) => (
               <button
                 key={d}
                 type="button"
@@ -88,13 +88,13 @@ export const StoryForm = ({ onGenerate, isGenerating }: StoryFormProps) => {
                   : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
                   }`}
               >
-                {d}m
+                {d}s
               </button>
             ))}
           </div>
         </div>
         <p className="text-xs text-muted-foreground">
-          Longer videos will have more detailed stories and images
+          Choose between 10 to 120 seconds (Max 2 minutes)
         </p>
       </div>
 

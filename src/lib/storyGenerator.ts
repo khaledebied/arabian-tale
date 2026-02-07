@@ -62,10 +62,10 @@ async function callEdgeFunction<T>(functionName: string, body: object): Promise<
   return response.json();
 }
 
-export async function generateStory(title: string, durationMinutes: number): Promise<GeneratedStory> {
+export async function generateStory(title: string, durationSeconds: number): Promise<GeneratedStory> {
   return callEdgeFunction<GeneratedStory>("generate-story", {
     title,
-    durationMinutes,
+    durationSeconds,
   });
 }
 

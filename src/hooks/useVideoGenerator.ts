@@ -72,7 +72,7 @@ export function useVideoGenerator() {
     setIsComplete(false);
   }, []);
 
-  const generateVideo = useCallback(async (title: string, durationMinutes: number) => {
+  const generateVideo = useCallback(async (title: string, durationSeconds: number) => {
     if (!title.trim()) {
       toast.error("Please enter a story title");
       return;
@@ -87,7 +87,7 @@ export function useVideoGenerator() {
       setStepStatus("storyGeneration", "active");
       toast.info("Generating Arabic story and scenes...");
 
-      const story = await withRetry(() => generateStory(title, durationMinutes));
+      const story = await withRetry(() => generateStory(title, durationSeconds));
 
       console.log("Generated story response:", story);
 
@@ -157,7 +157,7 @@ export function useVideoGenerator() {
       setStepStatus("music", "active");
       toast.info("Generating ambient background music...");
 
-      const music = await withRetry(() => generateMusic(durationMinutes * 60));
+      const music = await withRetry(() => generateMusic(Math.min(durationSeconds, 120)));
       setOutput((prev) => ({ ...prev, music }));
       setStepStatus("music", "completed");
       toast.success("Background music ready");

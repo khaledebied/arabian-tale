@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { title, durationMinutes } = await req.json();
+    const { title, durationSeconds } = await req.json();
 
     if (!title) {
       return new Response(
@@ -26,11 +26,10 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    // Calculate approximate word count based on duration
-    // Arabic narration: ~100-120 words per minute for calm pacing
-    // Calculate approximate scene count based on duration
-    // Each scene ~15-20 seconds, so ~3-4 scenes per minute
-    const sceneCount = Math.max(3, (durationMinutes || 5) * 3);
+    // Calculate scene count based on duration (approx 20 seconds per scene)
+    // 60s -> 3 scenes
+    // 10s -> 1 scene
+    const sceneCount = Math.max(1, Math.round((durationSeconds || 60) / 20));
 
     const systemPrompt = `أنت راوٍ محترف للقصص العربية ومخرج بصري. مهمتك كتابة قصص عربية أصلية بالتشكيل الكامل مقسمة إلى مشاهِد.
 
