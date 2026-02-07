@@ -1,1 +1,10 @@
 project_id = "tifnfirqudpkalgjcdfe"
+
+[functions.generate-story]
+verify_jwt = false
+
+[functions.generate-voiceover]
+verify_jwt = false
+
+[functions.generate-music]
+verify_jwt = false

@@ -1,8 +1,8 @@
-import { useState } from "react";
 import { Header } from "@/components/Header";
 import { StoryForm } from "@/components/StoryForm";
 import { PipelineStep } from "@/components/PipelineStep";
 import { OutputPreview } from "@/components/OutputPreview";
+import { useVideoGenerator } from "@/hooks/useVideoGenerator";
 import {
   BookOpen,
   Volume2,
@@ -11,17 +11,6 @@ import {
   Scissors,
   Download,
 } from "lucide-react";
-
-type StepStatus = "pending" | "active" | "completed";
-
-interface PipelineState {
-  storyGeneration: StepStatus;
-  voiceOver: StepStatus;
-  backgroundVideo: StepStatus;
-  music: StepStatus;
-  editing: StepStatus;
-  export: StepStatus;
-}
 
 const pipelineSteps = [
   {
@@ -75,61 +64,14 @@ const pipelineSteps = [
 ];
 
 const Index = () => {
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [currentTitle, setCurrentTitle] = useState("");
-  const [pipelineState, setPipelineState] = useState<PipelineState>({
-    storyGeneration: "pending",
-    voiceOver: "pending",
-    backgroundVideo: "pending",
-    music: "pending",
-    editing: "pending",
-    export: "pending",
-  });
-  const [isComplete, setIsComplete] = useState(false);
-
-  const simulatePipeline = async (title: string, duration: number) => {
-    setIsGenerating(true);
-    setCurrentTitle(title);
-    setIsComplete(false);
-
-    const steps: (keyof PipelineState)[] = [
-      "storyGeneration",
-      "voiceOver",
-      "backgroundVideo",
-      "music",
-      "editing",
-      "export",
-    ];
-
-    // Reset all steps
-    setPipelineState({
-      storyGeneration: "pending",
-      voiceOver: "pending",
-      backgroundVideo: "pending",
-      music: "pending",
-      editing: "pending",
-      export: "pending",
-    });
-
-    // Simulate each step
-    for (let i = 0; i < steps.length; i++) {
-      const step = steps[i];
-      
-      // Set current step to active
-      setPipelineState((prev) => ({ ...prev, [step]: "active" }));
-      
-      // Wait for step to complete (simulated)
-      await new Promise((resolve) => 
-        setTimeout(resolve, 1500 + Math.random() * 1000)
-      );
-      
-      // Mark step as completed
-      setPipelineState((prev) => ({ ...prev, [step]: "completed" }));
-    }
-
-    setIsGenerating(false);
-    setIsComplete(true);
-  };
+  const {
+    isGenerating,
+    pipelineState,
+    output,
+    currentTitle,
+    isComplete,
+    generateVideo,
+  } = useVideoGenerator();
 
   return (
     <div className="min-h-screen ambient-bg">
@@ -162,7 +104,7 @@ const Index = () => {
                 Configuration
               </h3>
               <StoryForm
-                onGenerate={simulatePipeline}
+                onGenerate={generateVideo}
                 isGenerating={isGenerating}
               />
             </div>
@@ -196,16 +138,20 @@ const Index = () => {
               <span className="w-2 h-2 rounded-full bg-success" />
               Output Preview
             </h3>
-            <OutputPreview isComplete={isComplete} storyTitle={currentTitle} />
+            <OutputPreview 
+              isComplete={isComplete} 
+              storyTitle={currentTitle}
+              output={output}
+            />
           </div>
         </div>
 
         {/* Info Section */}
         <div className="mt-16 text-center">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-secondary border border-border">
-            <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+            <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
             <span className="text-sm text-muted-foreground">
-              Ready for automation with AI services
+              Powered by Lovable AI & ElevenLabs
             </span>
           </div>
         </div>
