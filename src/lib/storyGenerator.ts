@@ -34,32 +34,52 @@ export interface GenerationResult {
 }
 
 async function callEdgeFunction<T>(functionName: string, body: object): Promise<T> {
-  const response = await fetch(`${SUPABASE_URL}/functions/v1/${functionName}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      apikey: SUPABASE_KEY,
-      Authorization: `Bearer ${SUPABASE_KEY}`,
-    },
-    body: JSON.stringify(body),
-  });
+  try {
+    console.log(`Calling edge function: ${functionName}`, body);
 
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ error: "Unknown error" }));
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/${functionName}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+      },
+      body: JSON.stringify(body),
+    });
 
-    if (response.status === 429) {
-      toast.error("Rate limit exceeded. Please wait a moment and try again.");
-      throw new Error("Rate limit exceeded");
+    console.log(`Response from ${functionName}:`, response.status, response.statusText);
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: "Unknown error" }));
+      console.error(`Error from ${functionName}:`, errorData);
+
+      if (response.status === 429) {
+        toast.error("Rate limit exceeded. Please wait a moment and try again.");
+        throw new Error("Rate limit exceeded");
+      }
+      if (response.status === 402) {
+        toast.error("AI credits exhausted. Please add credits to continue.");
+        throw new Error("Credits exhausted");
+      }
+
+      const errorMessage = errorData.error || `Request failed: ${response.status}`;
+      toast.error(`${functionName} failed: ${errorMessage}`);
+      throw new Error(errorMessage);
     }
-    if (response.status === 402) {
-      toast.error("AI credits exhausted. Please add credits to continue.");
-      throw new Error("Credits exhausted");
+
+    const data = await response.json();
+    console.log(`Success from ${functionName}:`, data);
+    return data;
+  } catch (error) {
+    console.error(`Network error calling ${functionName}:`, error);
+
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      toast.error(`Network error: Cannot reach ${functionName}. Check your connection.`);
+      throw new Error(`Network error: Failed to fetch ${functionName}`);
     }
 
-    throw new Error(errorData.error || `Request failed: ${response.status}`);
+    throw error;
   }
-
-  return response.json();
 }
 
 export async function generateStory(title: string, durationSeconds: number): Promise<GeneratedStory> {

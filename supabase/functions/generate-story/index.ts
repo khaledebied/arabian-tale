@@ -12,7 +12,19 @@ serve(async (req) => {
   }
 
   try {
-    const { title, durationSeconds } = await req.json();
+    let title, durationSeconds;
+    try {
+      const body = await req.json();
+      title = body.title;
+      durationSeconds = body.durationSeconds;
+    } catch {
+      return new Response(
+        JSON.stringify({ error: "Invalid request body" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log("Story generation request:", { title, durationSeconds });
 
     if (!title) {
       return new Response(
@@ -23,6 +35,7 @@ serve(async (req) => {
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
+      console.error("LOVABLE_API_KEY is not configured");
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
@@ -30,6 +43,7 @@ serve(async (req) => {
     // 60s -> 3 scenes
     // 10s -> 1 scene
     const sceneCount = Math.max(1, Math.round((durationSeconds || 60) / 20));
+    console.log("Calculated scene count:", sceneCount);
 
     const systemPrompt = `أنت راوٍ محترف للقصص العربية ومخرج بصري. مهمتك كتابة قصص عربية أصلية بالتشكيل الكامل مقسمة إلى مشاهِد.
 
