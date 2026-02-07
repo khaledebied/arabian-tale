@@ -12,7 +12,16 @@ serve(async (req) => {
     }
 
     try {
-        const { prompt } = await req.json();
+        let prompt;
+        try {
+            const body = await req.json();
+            prompt = body.prompt;
+        } catch {
+            return new Response(
+                JSON.stringify({ error: "Invalid request body" }),
+                { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+        }
 
         if (!prompt) {
             return new Response(
