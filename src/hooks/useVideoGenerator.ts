@@ -88,6 +88,32 @@ export function useVideoGenerator() {
       toast.info("Generating Arabic story and scenes...");
 
       const story = await withRetry(() => generateStory(title, durationMinutes));
+
+      console.log("Generated story response:", story);
+
+      if (!story) {
+        throw new Error("Story generation returned null or undefined");
+      }
+
+      // Fallback for older edge function versions or malformed responses
+      if (!story.scenes || !Array.isArray(story.scenes)) {
+        console.warn("Story scenes missing, attempting to adapt structure...", story);
+
+        // If we have a 'story' string property but no scenes, wrap it in a single scene
+        if ((story as any).story && typeof (story as any).story === 'string') {
+          story.scenes = [{
+            text: (story as any).story,
+            imagePrompt: `Cinematic scene: ${title}`
+          }];
+        } else {
+          throw new Error("Invalid story structure: missing scenes");
+        }
+      }
+
+      if (story.scenes.length === 0) {
+        throw new Error("Generated story contains no scenes");
+      }
+
       setOutput((prev) => ({ ...prev, story }));
       setStepStatus("storyGeneration", "completed");
       toast.success(`Story generated with ${story.scenes.length} scenes`);
