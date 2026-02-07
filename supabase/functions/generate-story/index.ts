@@ -91,15 +91,21 @@ serve(async (req) => {
     const data = await response.json();
     const content = JSON.parse(data.choices?.[0]?.message?.content || "{}");
 
-    if (!content.scenes || content.scenes.length === 0) {
-      throw new Error("No scenes generated");
+    if (!content.scenes || !Array.isArray(content.scenes) || content.scenes.length === 0) {
+      console.error("Invalid scenes format:", content);
+      throw new Error("No scenes generated or invalid format");
     }
+
+    const totalWordCount = content.scenes.reduce((acc: number, s: any) => {
+      if (!s || typeof s.text !== 'string') return acc;
+      return acc + s.text.split(/\s+/).length;
+    }, 0);
 
     return new Response(
       JSON.stringify({
         title: content.title || title,
         scenes: content.scenes,
-        wordCount: content.scenes.reduce((acc: number, s: any) => acc + s.text.split(/\s+/).length, 0),
+        wordCount: totalWordCount,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
