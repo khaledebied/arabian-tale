@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
-import { CheckCircle2, Circle, Loader2 } from "lucide-react";
+import { CheckCircle2, Circle, Loader2, AlertCircle } from "lucide-react";
+import { StepStatus } from "@/hooks/useVideoGenerator";
 
 interface PipelineStepProps {
   step: number;
@@ -7,7 +8,7 @@ interface PipelineStepProps {
   titleAr: string;
   description: string;
   icon: React.ReactNode;
-  status: "pending" | "active" | "completed";
+  status: StepStatus;
   isLast?: boolean;
 }
 
@@ -26,12 +27,18 @@ export const PipelineStep = ({
         className={cn(
           "pipeline-card rounded-xl p-6 relative overflow-hidden",
           status === "active" && "active",
-          status === "completed" && "completed"
+          status === "completed" && "completed",
+          status === "error" && "border-destructive"
         )}
       >
         {/* Background glow for active state */}
         {status === "active" && (
           <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent pointer-events-none" />
+        )}
+
+        {/* Error background */}
+        {status === "error" && (
+          <div className="absolute inset-0 bg-gradient-to-br from-destructive/10 to-transparent pointer-events-none" />
         )}
 
         <div className="relative z-10">
@@ -43,7 +50,8 @@ export const PipelineStep = ({
                   "w-10 h-10 rounded-lg flex items-center justify-center transition-colors duration-300",
                   status === "pending" && "bg-muted text-muted-foreground",
                   status === "active" && "bg-primary text-primary-foreground",
-                  status === "completed" && "bg-success text-success-foreground"
+                  status === "completed" && "bg-success text-success-foreground",
+                  status === "error" && "bg-destructive text-destructive-foreground"
                 )}
               >
                 {icon}
@@ -66,6 +74,9 @@ export const PipelineStep = ({
               )}
               {status === "completed" && (
                 <CheckCircle2 className="w-5 h-5 text-success" />
+              )}
+              {status === "error" && (
+                <AlertCircle className="w-5 h-5 text-destructive" />
               )}
             </div>
           </div>
