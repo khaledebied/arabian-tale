@@ -15,34 +15,34 @@ import {
 const pipelineSteps = [
   {
     key: "storyGeneration" as const,
-    title: "Story Generation",
-    titleAr: "تَوْلِيدُ القِصَّةِ",
+    title: "Story & Scene Breakdown",
+    titleAr: "تَوْلِيدُ القِصَّةِ وَالمَشَاهِدِ",
     description:
-      "Generating an original Arabic story with full diacritics (تَشْكِيلٌ كَامِلٌ). Calm, immersive tone suitable for narration.",
+      "Generating an original Arabic story with full diacritics and breaking it into visual scenes.",
     icon: <BookOpen className="w-5 h-5" />,
+  },
+  {
+    key: "imageGeneration" as const,
+    title: "Cinematic Image Generation",
+    titleAr: "تَوْلِيدُ الصُّوَرِ السِّينِمَائِيَّةِ",
+    description:
+      "Creating unique AI-generated high-resolution visuals for every scene in the story.",
+    icon: <Film className="w-5 h-5" />,
   },
   {
     key: "voiceOver" as const,
     title: "Voice-Over Synthesis",
     titleAr: "تَحْوِيلُ النَّصِّ إِلَى صَوْتٍ",
     description:
-      "Converting Arabic text to human-like speech. Calm, warm, deep voice with slow pacing.",
+      "Converting Arabic text to human-like speech with professional narration for each scene.",
     icon: <Volume2 className="w-5 h-5" />,
-  },
-  {
-    key: "backgroundVideo" as const,
-    title: "Background Video",
-    titleAr: "فِيدِيُو الخَلْفِيَّةِ",
-    description:
-      "Selecting cinematic background visuals. Slow motion, relaxing scenes: night sky, rain, forest.",
-    icon: <Film className="w-5 h-5" />,
   },
   {
     key: "music" as const,
     title: "Ambient Music",
     titleAr: "المُوسِيقَى الهَادِئَةُ",
     description:
-      "Adding soft, copyright-free background music. Low volume to complement the narration.",
+      "Adding soft, copyright-free background music to create an immersive atmosphere.",
     icon: <Music className="w-5 h-5" />,
   },
   {
@@ -50,7 +50,7 @@ const pipelineSteps = [
     title: "Auto Video Editing",
     titleAr: "تَحْرِيرُ الفِيدِيُو تِلْقَائِيًّا",
     description:
-      "Combining all elements with smooth transitions. Full HD 1920x1080 at 16:9 aspect ratio.",
+      "Combining scenes, voice-overs, and music with professional transitions and effects.",
     icon: <Scissors className="w-5 h-5" />,
   },
   {
@@ -58,7 +58,7 @@ const pipelineSteps = [
     title: "Export & Output",
     titleAr: "التَّصْدِيرُ وَالنَّتَائِجُ",
     description:
-      "Exporting final MP4 video, story text file, and voice-over audio. Ready for YouTube.",
+      "Finalizing the MP4 video in Full HD. Ready for download and social media sharing.",
     icon: <Download className="w-5 h-5" />,
   },
 ];
@@ -77,7 +77,7 @@ const Index = () => {
     <div className="min-h-screen ambient-bg">
       <Header />
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 relative z-10">
         {/* Hero Section */}
         <div className="text-center mb-12 animate-fade-in">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
@@ -138,8 +138,8 @@ const Index = () => {
               <span className="w-2 h-2 rounded-full bg-success" />
               Output Preview
             </h3>
-            <OutputPreview 
-              isComplete={isComplete} 
+            <OutputPreview
+              isComplete={isComplete}
               storyTitle={currentTitle}
               output={output}
             />

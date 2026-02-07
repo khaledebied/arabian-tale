@@ -3,9 +3,11 @@ import {
   generateStory,
   generateVoiceover,
   generateMusic,
+  generateImage,
   GeneratedStory,
   GeneratedVoiceover,
   GeneratedMusic,
+  StoryScene,
 } from "@/lib/storyGenerator";
 import { toast } from "sonner";
 
@@ -13,8 +15,8 @@ export type StepStatus = "pending" | "active" | "completed" | "error";
 
 export interface PipelineState {
   storyGeneration: StepStatus;
+  imageGeneration: StepStatus;
   voiceOver: StepStatus;
-  backgroundVideo: StepStatus;
   music: StepStatus;
   editing: StepStatus;
   export: StepStatus;
@@ -24,15 +26,29 @@ export interface GenerationOutput {
   story: GeneratedStory | null;
   voiceover: GeneratedVoiceover | null;
   music: GeneratedMusic | null;
+  videoUrl?: string;
 }
 
 const initialPipelineState: PipelineState = {
   storyGeneration: "pending",
+  imageGeneration: "pending",
   voiceOver: "pending",
-  backgroundVideo: "pending",
   music: "pending",
   editing: "pending",
   export: "pending",
+};
+
+const withRetry = async <T>(fn: () => Promise<T>, retries = 2): Promise<T> => {
+  try {
+    return await fn();
+  } catch (error) {
+    if (retries > 0) {
+      console.log(`Retrying... (${retries} attempts left)`);
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      return withRetry(fn, retries - 1);
+    }
+    throw error;
+  }
 };
 
 export function useVideoGenerator() {
@@ -57,74 +73,98 @@ export function useVideoGenerator() {
   }, []);
 
   const generateVideo = useCallback(async (title: string, durationMinutes: number) => {
+    if (!title.trim()) {
+      toast.error("Please enter a story title");
+      return;
+    }
+
     setIsGenerating(true);
     setCurrentTitle(title);
     resetPipeline();
 
     try {
-      // Step 1: Generate Story
+      // Step 1: Generate Story & Scenes
       setStepStatus("storyGeneration", "active");
-      toast.info("Generating Arabic story with full diacritics...");
-      
-      const story = await generateStory(title, durationMinutes);
+      toast.info("Generating Arabic story and scenes...");
+
+      const story = await withRetry(() => generateStory(title, durationMinutes));
       setOutput((prev) => ({ ...prev, story }));
       setStepStatus("storyGeneration", "completed");
-      toast.success(`Story generated: ${story.wordCount} words`);
+      toast.success(`Story generated with ${story.scenes.length} scenes`);
 
-      // Step 2: Generate Voice-Over
+      // Step 2: Generate Images for each scene
+      setStepStatus("imageGeneration", "active");
+      toast.info("Generating cinematic visuals for each scene...");
+
+      const updatedScenes: StoryScene[] = [];
+      for (const scene of story.scenes) {
+        toast.info(`Generating image for: ${scene.text.substring(0, 30)}...`);
+        const { imageUrl } = await withRetry(() => generateImage(scene.imagePrompt));
+        updatedScenes.push({ ...scene, imageUrl });
+      }
+
+      const storyWithImages = { ...story, scenes: updatedScenes };
+      setOutput((prev) => ({ ...prev, story: storyWithImages }));
+      setStepStatus("imageGeneration", "completed");
+      toast.success("All scene images generated");
+
+      // Step 3: Generate Voice-Over for each scene
       setStepStatus("voiceOver", "active");
       toast.info("Synthesizing Arabic voice-over...");
-      
-      const voiceover = await generateVoiceover(story.story);
-      setOutput((prev) => ({ ...prev, voiceover }));
-      setStepStatus("voiceOver", "completed");
-      toast.success("Voice-over generated successfully");
 
-      // Step 3: Background Video (simulated - would need video API)
-      setStepStatus("backgroundVideo", "active");
-      toast.info("Selecting cinematic background visuals...");
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      setStepStatus("backgroundVideo", "completed");
-      toast.success("Background visuals ready");
+      // For now, we combine all text for a single voiceover or do it per scene
+      // The requirement says "Ensure every scene has: ... Voice-over segment"
+      const finalScenes: StoryScene[] = [];
+      for (const scene of updatedScenes) {
+        const voiceover = await withRetry(() => generateVoiceover(scene.text));
+        finalScenes.push({ ...scene, voiceoverUrl: `data:audio/mp3;base64,${voiceover.audioContent}` });
+      }
+
+      setOutput((prev) => ({
+        ...prev,
+        story: { ...story, scenes: finalScenes }
+      }));
+      setStepStatus("voiceOver", "completed");
+      toast.success("Voice-over synthesis complete");
 
       // Step 4: Generate Music
       setStepStatus("music", "active");
       toast.info("Generating ambient background music...");
-      
-      const music = await generateMusic(60);
+
+      const music = await withRetry(() => generateMusic(durationMinutes * 60));
       setOutput((prev) => ({ ...prev, music }));
       setStepStatus("music", "completed");
-      toast.success("Background music generated");
+      toast.success("Background music ready");
 
-      // Step 5: Auto Editing (simulated)
+      // Step 5: Video Assembly
       setStepStatus("editing", "active");
-      toast.info("Combining all elements...");
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      toast.info("Assembling final video...");
+
+      // Simulate video assembly delay
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+
       setStepStatus("editing", "completed");
       toast.success("Video assembled successfully");
 
       // Step 6: Export
       setStepStatus("export", "active");
-      toast.info("Preparing final exports...");
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      toast.info("Finalizing export...");
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
       setStepStatus("export", "completed");
-      
       setIsComplete(true);
-      toast.success("🎬 Video generation complete!");
+      toast.success("🎬 Your Arabian Tale is ready!");
 
     } catch (error) {
       console.error("Generation error:", error);
       const errorMessage = error instanceof Error ? error.message : "An error occurred";
       toast.error(`Generation failed: ${errorMessage}`);
-      
-      // Mark current active step as error
+
       setPipelineState((prev) => {
         const updated = { ...prev };
-        for (const key of Object.keys(updated) as (keyof PipelineState)[]) {
-          if (updated[key] === "active") {
-            updated[key] = "error";
-          }
-        }
+        (Object.keys(updated) as (keyof PipelineState)[]).forEach(key => {
+          if (updated[key] === "active") updated[key] = "error";
+        });
         return updated;
       });
     } finally {

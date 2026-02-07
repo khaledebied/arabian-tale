@@ -3,8 +3,15 @@ import { toast } from "sonner";
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
+export interface StoryScene {
+  text: string;
+  imagePrompt: string;
+  imageUrl?: string;
+  voiceoverUrl?: string;
+}
+
 export interface GeneratedStory {
-  story: string;
+  scenes: StoryScene[];
   title: string;
   wordCount: number;
 }
@@ -39,7 +46,7 @@ async function callEdgeFunction<T>(functionName: string, body: object): Promise<
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({ error: "Unknown error" }));
-    
+
     if (response.status === 429) {
       toast.error("Rate limit exceeded. Please wait a moment and try again.");
       throw new Error("Rate limit exceeded");
@@ -48,7 +55,7 @@ async function callEdgeFunction<T>(functionName: string, body: object): Promise<
       toast.error("AI credits exhausted. Please add credits to continue.");
       throw new Error("Credits exhausted");
     }
-    
+
     throw new Error(errorData.error || `Request failed: ${response.status}`);
   }
 
@@ -59,6 +66,12 @@ export async function generateStory(title: string, durationMinutes: number): Pro
   return callEdgeFunction<GeneratedStory>("generate-story", {
     title,
     durationMinutes,
+  });
+}
+
+export async function generateImage(prompt: string): Promise<{ imageUrl: string }> {
+  return callEdgeFunction<{ imageUrl: string }>("generate-image", {
+    prompt,
   });
 }
 
@@ -94,13 +107,13 @@ export function playAudio(base64Audio: string, format: string = "mp3"): HTMLAudi
 
 export function downloadFile(content: string | Blob, filename: string, mimeType?: string) {
   let blob: Blob;
-  
+
   if (content instanceof Blob) {
     blob = content;
   } else {
     blob = new Blob([content], { type: mimeType || "text/plain;charset=utf-8" });
   }
-  
+
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;

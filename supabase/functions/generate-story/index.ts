@@ -28,26 +28,31 @@ serve(async (req) => {
 
     // Calculate approximate word count based on duration
     // Arabic narration: ~100-120 words per minute for calm pacing
-    const wordsPerMinute = 100;
-    const targetWordCount = wordsPerMinute * (durationMinutes || 5);
+    // Calculate approximate scene count based on duration
+    // Each scene ~15-20 seconds, so ~3-4 scenes per minute
+    const sceneCount = Math.max(3, (durationMinutes || 5) * 3);
 
-    const systemPrompt = `أنت راوٍ محترف للقصص العربية. مهمتك كتابة قصص عربية أصلية بالتشكيل الكامل (تَشْكِيلٌ كَامِلٌ لِكُلِّ حَرْفٍ).
+    const systemPrompt = `أنت راوٍ محترف للقصص العربية ومخرج بصري. مهمتك كتابة قصص عربية أصلية بالتشكيل الكامل مقسمة إلى مشاهِد.
 
 القواعد الصارمة:
-1. اكتب القصة بالعربية الفصحى مع التشكيل الكامل لكل كلمة
-2. الأسلوب: هادئ، غامر، مناسب للسرد الصوتي
-3. لا تستخدم الحوار المباشر (علامات التنصيص)
-4. لا تستخدم الرموز التعبيرية
-5. لا تذكر الذكاء الاصطناعي أو أي أدوات
-6. اجعل القصة متماسكة من البداية إلى النهاية
-7. استخدم وصفاً حسياً غنياً
-8. الطول المستهدف: حوالي ${targetWordCount} كلمة
+1. اكتب القصة بالعربية الفصحى مع التشكيل الكامل (تَشْكِيلٌ كَامِلٌ) لكل حرف.
+2. الأسلوب: هادئ، غامر، مناسب للسرد الصوتي.
+3. قسّم القصة إلى ${sceneCount} مشهد بالضبط.
+4. لكل مشهد، قدم:
+   - "text": نص السرد بالتشكيل الكامل.
+   - "imagePrompt": وصف بصري دقيق باللغة الإنجليزية لإنشاء صورة لهذا المشهد (أسلوب سينمائي، واقعي، إضاءة درامية).
+5. يجب أن تكون المخرجات بتنسيق JSON حصراً كالتالي:
+   {
+     "title": "عنوان القصة",
+     "scenes": [
+       { "text": "...", "imagePrompt": "..." },
+       ...
+     ]
+   }
+6. لا تستخدم الحوار المباشر.
+7. لا تذكر الذكاء الاصطناعي.`;
 
-ابدأ القصة مباشرة دون مقدمات أو تعليقات.`;
-
-    const userPrompt = `اكتب قصة عربية أصلية مستوحاة من هذا العنوان: "${title}"
-
-تذكر: التشكيل الكامل إلزامي لكل كلمة في القصة.`;
+    const userPrompt = `اكتب قصة من ${sceneCount} مشهد مستوحاة من: "${title}" بالتشكيل الكامل.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -56,11 +61,12 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-pro",
+        model: "google/gemini-2.0-flash-exp",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
         ],
+        response_format: { type: "json_object" }
       }),
     });
 
@@ -83,17 +89,17 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    const storyText = data.choices?.[0]?.message?.content;
+    const content = JSON.parse(data.choices?.[0]?.message?.content || "{}");
 
-    if (!storyText) {
-      throw new Error("No story generated");
+    if (!content.scenes || content.scenes.length === 0) {
+      throw new Error("No scenes generated");
     }
 
     return new Response(
       JSON.stringify({
-        story: storyText,
-        title,
-        wordCount: storyText.split(/\s+/).length,
+        title: content.title || title,
+        scenes: content.scenes,
+        wordCount: content.scenes.reduce((acc: number, s: any) => acc + s.text.split(/\s+/).length, 0),
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

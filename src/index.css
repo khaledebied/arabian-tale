@@ -1,8 +1,8 @@
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
 
 @layer base {
   :root {
@@ -81,18 +81,20 @@
   }
 
   /* Arabic text styling */
-  [dir="rtl"], .arabic-text {
+  [dir="rtl"],
+  .arabic-text {
     font-family: 'Cairo', 'Inter', sans-serif;
     direction: rtl;
   }
 }
 
 @layer components {
+
   /* Cinematic glow effect */
   .glow-effect {
     position: relative;
   }
-  
+
   .glow-effect::before {
     content: '';
     position: absolute;
@@ -104,7 +106,7 @@
     z-index: -1;
     filter: blur(12px);
   }
-  
+
   .glow-effect:hover::before {
     opacity: 0.5;
   }
@@ -148,11 +150,22 @@
     height: 200%;
     background: var(--gradient-glow);
     animation: ambientPulse 8s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 0;
   }
 
   @keyframes ambientPulse {
-    0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.3; }
-    50% { transform: translate(10%, 10%) scale(1.1); opacity: 0.5; }
+
+    0%,
+    100% {
+      transform: translate(0, 0) scale(1);
+      opacity: 0.3;
+    }
+
+    50% {
+      transform: translate(10%, 10%) scale(1.1);
+      opacity: 0.5;
+    }
   }
 
   /* Text gradient */
@@ -169,8 +182,15 @@
   }
 
   @keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-10px); }
+
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+
+    50% {
+      transform: translateY(-10px);
+    }
   }
 
   /* Progress bar glow */
